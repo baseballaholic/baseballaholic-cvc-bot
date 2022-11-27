@@ -65,12 +65,13 @@ async def on_message(message):
         embed.add_field(name=f"{ign}'s Defusal Stats:", value=f"Kills: {defusal_kills}\nDeaths: {defusal_deaths}\n"
                                                               f"KDR: {defusal_kdr}\nWins: {defusal_wins}\n"
                                                               f"Bombs Planted: {bomb_plants}\nBombs Defused: {bomb_defused}")
+        #Displays the face of their minecraft skin in the top right of the embed (does this with every command where a player is involved)
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
         await message.channel.send(embed=embed)
 
-    #Command to
+    #Command to check a player's tdm stats
     if message.content.startswith("$cvc tdm"):
         # THE ORDER OF THE ARRAY: KILLS, DEATHS, WINS
         tdm_stats = get_cvc_tdm_stats(stats)
@@ -91,8 +92,9 @@ async def on_message(message):
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
         await message.channel.send(embed=embed)
 
+    #Command to check a player's gun game stats
     if message.content.startswith("$cvc gun game"):
-        # THE ORDER OF THE ARRAY: WINS, KILLS, DEATHS, GAMES PLAYES, FASTEST, CARE, ARMOR, SPEED
+        # THE ORDER OF THE ARRAY: WINS, KILLS, DEATHS, GAMES PLAYED, FASTEST, CARE, ARMOR, SPEED
         gg_stats = get_cvc_gun_game_stats(stats)
         (gg_wins, gg_kills, gg_deaths, gg_gp, gg_fastest, gg_care, gg_armor, gg_speed) = gg_stats
         if gg_deaths > 0:
@@ -118,6 +120,7 @@ async def on_message(message):
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
         await message.channel.send(embed=embed)
 
+    #Grabs a player's individual map wins and displays them
     if message.content.startswith("$cvc map wins"):
         map_wins = get_cvc_map_wins(stats)
         embed = discord.Embed(
@@ -134,6 +137,7 @@ async def on_message(message):
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
         await message.channel.send(embed=embed)
 
+    #Checks a player's combined stats in cvc
     if message.content.startswith("$cvc overall"):
         # THE ORDER OF THE ARRAY: KILLS, DEATHS, KDR, WINS, GRENADE KILLS, SHOTS FIRED, HS, HS%, COINS)
         overall_stats = get_cvc_overall_stats(stats)
@@ -164,6 +168,7 @@ async def on_message(message):
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
         await message.channel.send(embed=embed)
 
+    #Displays the help message
     if message.content.startswith("$cvc help"):
         embed = discord.Embed(
             title="How to use BaseBot!",
@@ -198,34 +203,41 @@ async def on_message(message):
 
         await message.channel.send(embed=embed)
 
+    #Displays how close a player is to unlocking all the obtainable gun skins
     if message.content.startswith("$cvc skins progress"):
         skin_progress = get_cvc_skins_progress(stats, oneTimeList)
         (pistol_kills, handgun_kills, carbine_kills, scoped_rifle_kills, shotgun_kills, auto_shotgun_kills, magnum_skin, p90_skin,
         mp5_skin, rifle_skin) = skin_progress
+        #Requirement: 100 Pistol Headshot Kills
         if pistol_kills > 100:
             pistol_kills = "Unlocked"
         else:
             pistol_kills = (f"{pistol_kills}/100 Pistol Kills")
+        #Requirement: 1500 HK Headshot kills
         if handgun_kills > 1500:
             handgun_kills = "Unlocked"
         else:
             handgun_kills = "{:,}".format(handgun_kills)
             handgun_kills = (f"{handgun_kills}/1,500 Handgun Headshot Kills")
+        #Requirement: 5000 M4 Kills
         if carbine_kills > 5000:
             carbine_kills = "Unlocked"
         else:
             carbine_kills = "{:,}".format(carbine_kills)
             carbine_kills = (f"{carbine_kills}/5,000 Carbine Kills")
+        #Requirement: 2500 AUG Headshot Kills
         if scoped_rifle_kills > 2500:
             scoped_rifle_kills = "Unlocked"
         else:
             scoped_rifle_kills = "{:,}".format(scoped_rifle_kills)
             scoped_rifle_kills = (f"{scoped_rifle_kills}/2,500 Scoped Rifle Headshot Kills")
+        #Requirement: 250 Shotgun Headshot Kills
         if shotgun_kills > 200:
             shotgun_kills = "Unlocked"
         else:
             shotgun_kills = "{:,}".format(shotgun_kills)
             shotgun_kills = (f"{shotgun_kills}/250 Shotgun Headshot Kills")
+        #Requirement: 7500 Auto Shotty Kills (cringe)
         if auto_shotgun_kills > 7500:
             auto_shotgun_kills = "Unlocked"
         else:
@@ -764,6 +776,7 @@ def get_cvc_skins_progress(data, oneTimeList):
             cvc_shotgun_headshot_kills, cvc_auto_shotgun_kills, cvc_magnum_skin, cvc_bullpup_skin, cvc_smg_skin,
             cvc_rifle_skin)
 
+# All these functions below are identical, grab a stat, check what skin they use, check if they have ammo clip upgrade, and return the stats
 # ALL CODE BELOW HERE IS FOR CVC pistol STATS
 def get_cvc_pistol_stats(data):
     try: cvc_pistol_damage = data["player"]["stats"]["MCGO"]["pistol_damage_increase"]
@@ -1155,6 +1168,7 @@ def get_cvc_gun_game_stats(data):
     except: cvc_gun_game_deaths = 0
     try: cvc_gun_game_played = data["player"]["stats"]["MCGO"]["game_plays_gungame"]
     except: cvc_gun_game_played = 0
+    #Returns a very large number
     try: cvc_gun_game_fastest = data["player"]["stats"]["MCGO"]["fastest_win_gungame"]
     except: cvc_gun_game_fastest = "N/A"
     if cvc_gun_game_fastest != "N/A":
@@ -1170,7 +1184,7 @@ def get_cvc_gun_game_stats(data):
 
 
 
-
+#These links go to tiny png of the gun skins so we can display what gun skin the user has equipped
 
 USP = 'https://cdn.discordapp.com/attachments/881008770224898200/887211710090477668/wood_pickaxe.png'
 USP_WHISPER = 'https://cdn.discordapp.com/attachments/881008770224898200/887211934754156544/iron_pickaxe.png'
