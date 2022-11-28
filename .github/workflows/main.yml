@@ -1,9 +1,12 @@
 name: secrets
-
 on: push
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test
+        run: |
+          echo: $DISCORD_BOT_TOKEN
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
 
-env:
-  DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-  
-run:
-  BaseBot.py
