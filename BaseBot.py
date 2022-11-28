@@ -1,12 +1,15 @@
 import discord
 import json
 import requests
+import os
 from random import randint
 client = discord.Client()
 
 # TODOS
 # Learn how to do leaderboards
 # Improve literally everything if possible
+
+DISCORD_BOT_TOKEN = os.environ.get('DB_TOKEN')
 
 client.DEFAULT_PREFIX = "$cvc"
 
