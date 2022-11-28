@@ -1207,5 +1207,5 @@ PUMP_ACTION = 'https://cdn.discordapp.com/attachments/881008770224898200/8875626
 BASALT_SHOTGUN = 'https://cdn.discordapp.com/attachments/881008770224898200/887562731954274325/wood_hoe.png'
 SPAS_12 = 'https://cdn.discordapp.com/attachments/881008770224898200/887565004231036948/wood_axe.png'
 SPAS_12_URBAN = 'https://cdn.discordapp.com/attachments/881008770224898200/887565027928846397/stone_axe.png'
-client.run(DISCORD_BOT_TOKEN)
+client.run(secrets.DISCORD_BOT_TOKEN)
 client.run(BOTTOKEN2)
