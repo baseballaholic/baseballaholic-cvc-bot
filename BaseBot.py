@@ -1,41 +1,45 @@
 import discord
 import json
 import requests
+from discord.ext import commands
+from discord import app_commands
 import os
-from random import randint
-client = discord.Client()
+bot = commands.Bot(command_prefix= "$", intents = discord.Intents.all())
 
 # TODOS
 # Learn how to do leaderboards
 # Improve literally everything if possible
 
-DISCORD_BOT_TOKEN = os.environ.get('DB_TOKEN')
-
-client.DEFAULT_PREFIX = "$cvc"
-
-@client.event
+DISCORD_BOT_TOKEN = os.environ['DISCORD_BOT_TOKEN']
+stats = " "
+ign = " "
+uuid = " "
+oneTimeList = " "
+@bot.event
 async def on_ready():
-    print("We have logged in as {0.user}".format(client))
-
-@client.event
-async def on_message(message):
-    #If the author of the message is the bot, return
-    if message.author == client.user:
-        return
-
+    activity = discord.Game(name="Cozy Ranked!")
+    await bot.change_presence(status=discord.Status.online, activity=activity)
+    print('We have logged in as {0.user}'.format(bot))
     try:
-        #If they're using the command, grab the username, UUID, and API of that player
-        if message.content.startswith("$cvc"):
-            namearray = message.content.split()
-            player = namearray[-1]
-            uuid = get_uuid(player)
-            stats = get_API(uuid)
-            #Grab their current username with correct caps
-            ign = stats["player"]["displayname"]
-            #Create an array and fill it with that player's one time Achievements
-            oneTimeList = []
-            for i in stats["player"]["achievementsOneTime"]:
-                oneTimeList.append(i)
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} command(s)")
+    except Exception as e:
+        print(e)
+
+async def statshelper(ctx, *, message):
+    global stats, ign, uuid, oneTimeList
+    try:
+        #If they're using a command, grab the username, UUID, and API of that player
+        player = message
+        uuid = get_uuid(player)
+        stats = get_API(uuid)
+        #Grab their current username with correct caps
+        ign = stats["player"]["displayname"]
+        #Create an array and fill it with that player's one time Achievements
+        oneTimeList = []
+        for i in stats["player"]["achievementsOneTime"]:
+            oneTimeList.append(i)
+        return True
     except:
         embed = discord.Embed(
             color=discord.Color.blurple()
@@ -43,10 +47,17 @@ async def on_message(message):
         embed.add_field(name="Error", value="Invalid Username/Command")
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
+        return False
 
-    #Command to check a player's defusal stats
-    if message.content.startswith("$cvc defusal"):
+#Command to check a player's defusal stats
+@bot.tree.command(name="defusal", description="Check a player's defusal stats")
+@app_commands.describe(username="Username")
+async def defusal(ctx, username: str):
+    # THE ORDER OF THE ARRAY: KILLS, DEATHS, WINS, BOMBS PLANTED, BOMBS DEFUSED
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # THE ORDER OF THE ARRAY: KILLS, DEATHS, WINS, BOMBS PLANTED, BOMBS DEFUSED
         defusal_stats = get_cvc_defusal_stats(stats)
         (defusal_kills, defusal_deaths, defusal_wins, bomb_plants, bomb_defused) = defusal_stats
@@ -72,10 +83,15 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    #Command to check a player's tdm stats
-    if message.content.startswith("$cvc tdm"):
+#Command to check a player's tdm stats
+@bot.tree.command(name="tdm", description="Check a player's TDM stats")
+@app_commands.describe(username="Username")
+async def tdm(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # THE ORDER OF THE ARRAY: KILLS, DEATHS, WINS
         tdm_stats = get_cvc_tdm_stats(stats)
         (tdm_kills, tdm_deaths, tdm_wins) = tdm_stats
@@ -93,10 +109,15 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    #Command to check a player's gun game stats
-    if message.content.startswith("$cvc gun game"):
+#Command to check a player's gun game stats
+@bot.tree.command(name="gungame", description="Check a player's Gun Game stats")
+@app_commands.describe(username="Username")
+async def gungame(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # THE ORDER OF THE ARRAY: WINS, KILLS, DEATHS, GAMES PLAYED, FASTEST, CARE, ARMOR, SPEED
         gg_stats = get_cvc_gun_game_stats(stats)
         (gg_wins, gg_kills, gg_deaths, gg_gp, gg_fastest, gg_care, gg_armor, gg_speed) = gg_stats
@@ -121,10 +142,15 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    #Grabs a player's individual map wins and displays them
-    if message.content.startswith("$cvc map wins"):
+#Grabs a player's individual map wins and displays them
+@bot.tree.command(name="mapwins", description="Check a player's overall map wins")
+@app_commands.describe(username="Username")
+async def mapwins(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         map_wins = get_cvc_map_wins(stats)
         embed = discord.Embed(
             color=discord.Color.blurple()
@@ -138,10 +164,15 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    #Checks a player's combined stats in cvc
-    if message.content.startswith("$cvc overall"):
+#Checks a player's combined stats in cvc
+@bot.tree.command(name="overall", description="Check a player's overall CvC stats")
+@app_commands.describe(username="Username")
+async def overall(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # THE ORDER OF THE ARRAY: KILLS, DEATHS, KDR, WINS, GRENADE KILLS, SHOTS FIRED, HS, HS%, COINS)
         overall_stats = get_cvc_overall_stats(stats)
         (overall_kills, overall_deaths, overall_kdr, overall_wins, overall_grenade_kills, overall_shots_fired, overall_headshot_kills,
@@ -169,45 +200,51 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    #Displays the help message
-    if message.content.startswith("$cvc help"):
-        embed = discord.Embed(
-            title="How to use BaseBot!",
-            color=discord.Color.blurple()
-        )
-        embed.set_thumbnail(url='https://hypixel.net/styles/hypixel-v2/images/game-icons/CVC-64.png')
-        embed.add_field(name='General Commands', value='$cvc **help** --> Displays the page you are currently reading\n'
-                                                          '$cvc **overall** (name) --> Displays the Overall stats of a player\n'
-                                                          '$cvc **tdm** (name) --> Displays the TDM stats of a player\n'
-                                                          '$cvc **defusal** (name) --> Displays the Defusal stats of a player\n'
-                                                          '$cvc **gun game** (name) --> Displays the Gun Game stats of a player\n'
-                                                          '$cvc **map wins** (name) --> Displays the Map Win stats of a player\n'
-                                                          '$cvc **skins progress** (name) --> Displays the Skin Progress of a player\n'
-                                                          '$cvc **tourney 1** (name) --> Displays the 1st Hypixel Official CvC Tourney stats of a player\n'
-                                                          '$cvc **tourney 2** (name) --> Displays the 2nd Hypixel Official CvC Tourney stats of a player',
-                       inline=False)
-        embed.add_field(name='Gun Specific Commands:', value=
-                                                          '**Note**: Gun stats have only started tracking with the 2020 update\n'
-                                                          '$cvc **pistol** (name) --> Displays the pistol stats of a player\n'
-                                                          '$cvc **handgun** (name) --> Displays the handgun stats of a player\n'
-                                                          '$cvc **deagle** (name) --> Displays the Deagle stats of a player\n'
-                                                          '$cvc **sniper** (name) --> Displays the Sniper stats of a player\n'
-                                                          '$cvc **bullpup** (name) --> Displays the Bullpup stats of a player\n'
-                                                          '$cvc **smg** (name) --> Displays the SMG stats of a player\n'
-                                                          '$cvc **rifle** (name) --> Displays the Rifle stats of a player\n'
-                                                          '$cvc **carbine** (name) --> Displays the Carbine stats of a player\n'
-                                                          '$cvc **aug** (name) --> Displays the Aug stats of a player\n'
-                                                          '$cvc **shotgun** (name) --> Displays the Shotgun stats of a player\n'
-                                                          '$cvc **auto shotgun** (name) --> Displays the Auto Shotgun stats of a player\n')
-        embed.set_footer(text="BaseBot by baseballaholic",
-                         icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
+#Displays the help message
+@bot.tree.command(name="cvchelp", description="Displays the help message")
+async def cvchelp(ctx):
+    embed = discord.Embed(
+        title="How to use BaseBot!",
+        color=discord.Color.blurple()
+    )
+    embed.set_thumbnail(url='https://hypixel.net/styles/hypixel-v2/images/game-icons/CVC-64.png')
+    embed.add_field(name='General Commands', value='/**help** --> Displays the page you are currently reading\n'
+                                                      '/**overall** (name) --> Displays the Overall stats of a player\n'
+                                                      '/**tdm** (name) --> Displays the TDM stats of a player\n'
+                                                      '/**defusal** (name) --> Displays the Defusal stats of a player\n'
+                                                      '/**gungame** (name) --> Displays the Gun Game stats of a player\n'
+                                                      '/**mapwins** (name) --> Displays the Map Win stats of a player\n'
+                                                      '/**skinsprogress** (name) --> Displays the Skin Progress of a player\n'
+                                                      '/**cvctourney1** (name) --> Displays the 1st Hypixel Official CvC Tourney stats of a player\n'
+                                                      '/**cvctourney2** (name) --> Displays the 2nd Hypixel Official CvC Tourney stats of a player',
+                   inline=False)
+    embed.add_field(name='Gun Specific Commands:', value=
+                                                      '**Note**: Gun stats have only started tracking with the 2020 update\n'
+                                                      '/**pistol** (name) --> Displays the pistol stats of a player\n'
+                                                      '/**hk** (name) --> Displays the handgun stats of a player\n'
+                                                      '/**deagle** (name) --> Displays the Deagle stats of a player\n'
+                                                      '/**sniper** (name) --> Displays the Sniper stats of a player\n'
+                                                      '/**p90** (name) --> Displays the P90 stats of a player\n'
+                                                      '/**mp5** (name) --> Displays the MP5 stats of a player\n'
+                                                      '/**ak** (name) --> Displays the AK stats of a player\n'
+                                                      '/**m4** (name) --> Displays the M4 stats of a player\n'
+                                                      '/**aug** (name) --> Displays the AUG stats of a player\n'
+                                                      '/**shotgun** (name) --> Displays the Shotgun stats of a player\n'
+                                                      '/**auto shotgun** (name) --> Displays the Auto Shotgun stats of a player\n')
+    embed.set_footer(text="BaseBot by baseballaholic",
+                     icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
 
-        await message.channel.send(embed=embed)
+    await ctx.response.send_message(embed=embed)
 
-    #Displays how close a player is to unlocking all the obtainable gun skins
-    if message.content.startswith("$cvc skins progress"):
+#Displays how close a player is to unlocking all the obtainable gun skins
+@bot.tree.command(name="skinsprogress", description="Check a player's CvC skins progress")
+@app_commands.describe(username="Username")
+async def skinsprogress(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid, oneTimeList
         skin_progress = get_cvc_skins_progress(stats, oneTimeList)
         (pistol_kills, handgun_kills, carbine_kills, scoped_rifle_kills, shotgun_kills, auto_shotgun_kills, magnum_skin, p90_skin,
         mp5_skin, rifle_skin) = skin_progress
@@ -249,17 +286,22 @@ async def on_message(message):
         embed = discord.Embed(
             color=discord.Color.blurple()
         )
-        embed.add_field(name=f"{ign}'s CvC Skin Progress", value=f"Pistol - {pistol_kills}\nHandgun - {handgun_kills}\n"
-                                                                 f"Magnum - {magnum_skin}\nBullpup - {p90_skin}\n"
-                                                                 f"SMG - {mp5_skin}\nRifle - {rifle_skin}\n"
-                                                                 f"Carbine - {carbine_kills}\nScoped Rifle - {scoped_rifle_kills}\n"
-                                                                 f"Shotgun - {shotgun_kills}\nAuto Shotgun - {auto_shotgun_kills}")
+        embed.add_field(name=f"{ign}'s CvC Skin Progress", value=f"Pistol       - {pistol_kills}\nHandgun      - {handgun_kills}\n"
+                                                                 f"Magnum       - {magnum_skin}\nBullpup      - {p90_skin}\n"
+                                                                 f"SMG          - {mp5_skin}\nRifle        - {rifle_skin}\n"
+                                                                 f"Carbine      - {carbine_kills}\nScoped Rifle - {scoped_rifle_kills}\n"
+                                                                 f"Shotgun      - {shotgun_kills}\nAuto Shotgun - {auto_shotgun_kills}")
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc pistol"):
+@bot.tree.command(name="pistol", description="Check a player's pistol stats")
+@app_commands.describe(username="Username")
+async def pistol(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         #ARRAY ORDER IS DAMAGE, RECOIL, RELOAD, KILLS, HEADSHOT, SKIN, CLIP
         pistol_stats = get_cvc_pistol_stats(stats)
         (pistol_damage_increase, pistol_recoil_reduction, pistol_reload_speed_reduction, pistol_kills, pistol_headshots,
@@ -283,9 +325,14 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc handgun"):
+@bot.tree.command(name="hk", description="Check a player's HK stats")
+@app_commands.describe(username="Username")
+async def hk(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         #ARRAY ORDER IS DAMAGE, RECOIL, RELOAD, COST, KILLS, HEADSHOT, SKIN, CLIP
         handgun_stats = get_cvc_handgun_stats(stats)
         handgun_kills = handgun_stats[4]
@@ -310,9 +357,14 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc deagle"):
+@bot.tree.command(name="deagle", description="Check a player's Deagle stats")
+@app_commands.describe(username="Username")
+async def deagle(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # ARRAY ORDER IS DAMAGE, RECOIL, RELOAD, COST, KILLS, HEADSHOT, SKIN, CLIP
         magnum_stats = get_cvc_magnum_stats(stats)
         magnum_kills = magnum_stats[4]
@@ -339,9 +391,14 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc sniper"):
+@bot.tree.command(name="sniper", description="Check a player's Sniper stats")
+@app_commands.describe(username="Username")
+async def sniper(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # ARRAY ORDER IS DAMAGE, CHARGE, RELOAD, COST, KILLS, HEADSHOT, CLIP
         sniper_stats = get_cvc_sniper_stats(stats)
         sniper_kills = sniper_stats[4]
@@ -368,9 +425,14 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc bullpup"):
+@bot.tree.command(name="p90", description="Check a player's P90 stats")
+@app_commands.describe(username="Username")
+async def p90(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # ARRAY ORDER IS DAMAGE, RECOIL, RELOAD, COST, KILLS, HEADSHOT, SKIN, CLIP
         bullpup_stats = get_cvc_bullpup_stats(stats)
         bullpup_kills = bullpup_stats[4]
@@ -397,9 +459,14 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc smg"):
+@bot.tree.command(name="mp5", description="Check a player's MP5 stats")
+@app_commands.describe(username="Username")
+async def mp5(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # ARRAY ORDER IS DAMAGE, RECOIL, RELOAD, COST, KILLS, HEADSHOT, SKIN, CLIP
         smg_stats = get_cvc_smg_stats(stats)
         smg_kills = smg_stats[4]
@@ -426,9 +493,14 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc rifle"):
+@bot.tree.command(name="ak", description="Check a player's AK-47 stats")
+@app_commands.describe(username="Username")
+async def ak(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # ARRAY ORDER IS DAMAGE, RECOIL, RELOAD, COST, KILLS, HEADSHOT, SKIN, CLIP
         rifle_stats = get_cvc_rifle_stats(stats)
         rifle_kills = rifle_stats[4]
@@ -455,9 +527,14 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc carbine"):
+@bot.tree.command(name="m4", description="Check a M4 pistol stats")
+@app_commands.describe(username="Username")
+async def m4(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # ARRAY ORDER IS DAMAGE, RECOIL, RELOAD, COST, KILLS, HEADSHOT, SKIN, CLIP
         carbine_stats = get_cvc_carbine_stats(stats)
         carbine_kills = carbine_stats[4]
@@ -484,9 +561,14 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc aug"):
+@bot.tree.command(name="aug", description="Check a player's AUG stats")
+@app_commands.describe(username="Username")
+async def aug(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # ARRAY ORDER IS DAMAGE, RECOIL, RELOAD, COST, KILLS, HEADSHOT, SKIN, CLIP
         scoped_rifle_stats = get_cvc_scoped_rifle_stats(stats)
         scoped_rifle_kills = scoped_rifle_stats[4]
@@ -513,9 +595,14 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc shotgun"):
+@bot.tree.command(name="shotgun", description="Check a player's pistol stats")
+@app_commands.describe(username="Username")
+async def shotgun(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # ARRAY ORDER IS DAMAGE, RECOIL, RELOAD, COST, KILLS, HEADSHOT, SKIN, CLIP
         shotgun_stats = get_cvc_shotgun_stats(stats)
         shotgun_kills = shotgun_stats[4]
@@ -542,9 +629,14 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc auto shotgun"):
+@bot.tree.command(name="autoshotgun", description="Check a player's Auto Shotgun stats")
+@app_commands.describe(username="Username")
+async def autoshotgun(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         # ARRAY ORDER IS DAMAGE, RECOIL, RELOAD, COST, KILLS, HEADSHOT, SKIN, CLIP
         auto_shotgun_stats = get_cvc_auto_shotgun_stats(stats)
         auto_shotgun_kills = auto_shotgun_stats[4]
@@ -571,9 +663,14 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc tourney 1"):
+@bot.tree.command(name="cvctourney1", description="Check a player's Hypixel CvC Tourney 1 stats")
+@app_commands.describe(username="Username")
+async def cvctourney1(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         #ARRAY ORDER IS WINS, GAMES PLAYED, KILLS, DEATHS, HEADSHOT KILLS, SHOTS FIRED, BOMBS PLANTED, BOMBS DEFUSED, GRENADE KILLS
         tourney_zero = get_cvc_tourney_zero_stats(stats)
         if tourney_zero[3] > 0:
@@ -598,9 +695,14 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
 
-    if message.content.startswith("$cvc tourney 2"):
+@bot.tree.command(name="cvctourney2", description="Check a player's Hypixel CvC Tourney 2 stats")
+@app_commands.describe(username="Username")
+async def cvctourney2(ctx, username: str):
+    result = await statshelper(ctx, message=username)
+    if result is True:
+        global stats, ign, uuid
         #ARRAY ORDER IS WINS, GAMES PLAYED, KILLS, DEATHS, HEADSHOT KILLS, SHOTS FIRED, BOMBS PLANTED, BOMBS DEFUSED, GRENADE KILLS
         tourney_one = get_cvc_tourney_one_stats(stats)
         if tourney_one[3] > 0:
@@ -625,7 +727,7 @@ async def on_message(message):
         embed.set_thumbnail(url=f'https://crafatar.com/avatars/{uuid}')
         embed.set_footer(text="BaseBot by baseballaholic",
                          icon_url='https://cdn.discordapp.com/attachments/881008770224898200/887185034551902218/Fake_Forums_Avatar.png')
-        await message.channel.send(embed=embed)
+        await ctx.response.send_message(embed=embed)
         
 
 def getinfo(call):
@@ -794,6 +896,7 @@ def get_cvc_pistol_stats(data):
     except: cvc_pistol_headshots = 0
     try: cvc_pistol_skin = data["player"]["stats"]["MCGO"]["selectedpistolDev"]
     except: cvc_pistol_skin = USP
+    print(cvc_pistol_skin)
     if cvc_pistol_skin == 'USP_WHISPER_PLUS':
         cvc_pistol_skin = USP_WHISPER
     elif cvc_pistol_skin == 'USP_WHISPER':
@@ -1189,7 +1292,7 @@ def get_cvc_gun_game_stats(data):
 
 #These links go to tiny png of the gun skins so we can display what gun skin the user has equipped
 
-USP = 'https://cdn.discordapp.com/attachments/881008770224898200/887211710090477668/wood_pickaxe.png'
+USP = 'https://cdn.discordapp.com/attachments/881008770224898200/1046704345342812320/wood_pickaxe.png'
 USP_WHISPER = 'https://cdn.discordapp.com/attachments/881008770224898200/887211934754156544/iron_pickaxe.png'
 HK45 = 'https://cdn.discordapp.com/attachments/881008770224898200/887220692473483294/stone_pickaxe.png'
 HK45_MOUNTAINOUS = 'https://cdn.discordapp.com/attachments/881008770224898200/887220500592484382/wood_shovel.png'
@@ -1210,5 +1313,5 @@ PUMP_ACTION = 'https://cdn.discordapp.com/attachments/881008770224898200/8875626
 BASALT_SHOTGUN = 'https://cdn.discordapp.com/attachments/881008770224898200/887562731954274325/wood_hoe.png'
 SPAS_12 = 'https://cdn.discordapp.com/attachments/881008770224898200/887565004231036948/wood_axe.png'
 SPAS_12_URBAN = 'https://cdn.discordapp.com/attachments/881008770224898200/887565027928846397/stone_axe.png'
-client.run(DISCORD_BOT_TOKEN)
-client.run(BOTTOKEN2)
+
+bot.run(DISCORD_BOT_TOKEN)
