@@ -10,7 +10,7 @@ bot = commands.Bot(command_prefix= "$", intents = discord.Intents.all())
 # Learn how to do leaderboards
 # Improve literally everything if possible
 
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 stats = " "
 ign = " "
 uuid = " "
@@ -1314,4 +1314,4 @@ BASALT_SHOTGUN = 'https://cdn.discordapp.com/attachments/881008770224898200/8875
 SPAS_12 = 'https://cdn.discordapp.com/attachments/881008770224898200/887565004231036948/wood_axe.png'
 SPAS_12_URBAN = 'https://cdn.discordapp.com/attachments/881008770224898200/887565027928846397/stone_axe.png'
 
-bot.run(DISCORD_BOT_TOKEN)
+bot.run(TOKEN)
