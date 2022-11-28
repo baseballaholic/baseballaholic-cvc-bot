@@ -1,3 +1,3 @@
 import os
 
-DISCORD_BOT_TOKEN = 'DB_TOKEN'
+DISCORD_BOT_TOKEN = os.environ.get('DB_TOKEN')
