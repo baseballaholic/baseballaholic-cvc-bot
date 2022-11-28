@@ -6,7 +6,7 @@ jobs:
     steps:
       - name: Test
         run: |
-          echo: $DISCORD_BOT_TOKEN
+          echo $DISCORD_BOT_TOKEN
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
 
