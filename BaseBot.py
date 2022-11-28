@@ -10,7 +10,7 @@ bot = commands.Bot(command_prefix= "$", intents = discord.Intents.all())
 # Learn how to do leaderboards
 # Improve literally everything if possible
 
-DISCORD_BOT_TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
+DISCORD_BOT_TOKEN = os.environ['DISCORD_BOT_TOKEN']
 stats = " "
 ign = " "
 uuid = " "
