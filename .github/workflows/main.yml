@@ -2,21 +2,8 @@ name: secrets
 
 on: push
 
-jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-        
-        
-            - name: checkout repo content
-              uses: actions/checkout@v2
-              
-            - name: setup python
-              uses: actions/setup-python@v2
-              with:
-                python-version: '3.8'
-            
-            - name: execute py script
-              env:
-                DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-              run: python BaseBot.py
+env:
+  DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+  
+run:
+  BaseBot.py
