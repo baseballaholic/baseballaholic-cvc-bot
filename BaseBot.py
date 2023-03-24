@@ -9,7 +9,7 @@ bot = commands.Bot(command_prefix= "$", intents = discord.Intents.all())
 # Learn how to do leaderboards
 # Improve literally everything if possible
 
-TOKEN = 'ODgxMDA5MjM4OTEzMjA0MjY2.GrBjF9.VGi-9Qo3-leiw6Y9uQl_NHObkleSQA9-_mYPlw'
+TOKEN = thetoken
 stats = " "
 ign = " "
 uuid = " "
