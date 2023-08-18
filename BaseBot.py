@@ -744,11 +744,11 @@ def get_uuid(player):
 
 
 def get_API(player):
-    data = getinfo(f"https://api.hypixel.net/player?key={API_KEY}&uuid={player}")
+    data = getinfo(f"https://api.hypixel.net/player?key={}&uuid={player}")
     return data
 
 
-API_KEY = "deb9e086-d418-42f8-9de5-03676d1f98d9"
+API_KEY = "88659806-91f8-42ac-8923-6c8fab04d47f"
 
 
 # uuid_link = f"https://api.hypixel.net/player?key={API_KEY}&uuid={uuid}"
