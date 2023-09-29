@@ -748,7 +748,7 @@ def get_API(player):
     return data
 
 
-API_KEY = "88659806-91f8-42ac-8923-6c8fab04d47f"
+API_KEY = "8493fb61-c7d7-4959-8fa3-17686d2c1ecc"
 
 
 # uuid_link = f"https://api.hypixel.net/player?key={API_KEY}&uuid={uuid}"
